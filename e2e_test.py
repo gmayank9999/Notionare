@@ -53,11 +53,23 @@ def test_feature4():
         print("Feature 4 Failed:", e)
         results.append(("Feature 4: Workspace Generator", False, str(e)))
 
+def test_feature5():
+    print("\n--- Testing Feature 5 (RAG Chat) ---")
+    try:
+        from feature5_rag_chat import process_rag_chat
+        res = process_rag_chat("What is the goal of the multiplayer chess game?")
+        print("Feature 5 Success:", res)
+        results.append(("Feature 5: RAG Chat", True, "Answered query successfully"))
+    except Exception as e:
+        print("Feature 5 Failed:", e)
+        results.append(("Feature 5: RAG Chat", False, str(e)))
+
 if __name__ == "__main__":
     test_feature1()
     test_feature2()
     test_feature3()
     test_feature4()
+    test_feature5()
     
     print("\n\n=== E2E Test Summary ===")
     all_passed = True

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Bot, Search, Layout, MessageSquare, Terminal, Loader2, Sparkles } from 'lucide-react';
+import { Bot, Search, Layout, MessageSquare, Terminal, Loader2, Sparkles, Activity } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './index.css';
 
 const API_BASE = "http://localhost:8000/api";
@@ -11,7 +13,7 @@ function App() {
   const [result, setResult] = useState(null);
 
   const handleAction = async () => {
-    if (!input.trim()) return;
+    if (activeTab !== 'monitor' && !input.trim()) return;
     setLoading(true);
     setResult(null);
 
@@ -35,13 +37,17 @@ function App() {
         endpoint = "/chat";
         payload = { query: input };
         break;
+      case 'monitor':
+        endpoint = "/monitor";
+        payload = {};
+        break;
     }
 
     try {
       const res = await fetch(`${API_BASE}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: Object.keys(payload).length > 0 ? JSON.stringify(payload) : undefined
       });
       const data = await res.json();
       setResult(data.message || data.answer || "Success!");
@@ -52,12 +58,18 @@ function App() {
     }
   };
 
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    setInput('');
+    setResult(null);
+  };
+
   return (
     <div className="container" style={{ maxWidth: '800px', width: '100%' }}>
       <header style={{ textAlign: 'center', marginBottom: '3rem' }} className="animate-fade-in">
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-          <div style={{ background: 'rgba(99, 102, 241, 0.2)', padding: '1rem', borderRadius: '50%', boxShadow: '0 0 20px rgba(99, 102, 241, 0.4)' }}>
-            <Bot size={48} color="#a5b4fc" />
+          <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '1rem', borderRadius: '50%', boxShadow: '0 0 20px rgba(255, 255, 255, 0.05)' }}>
+            <Bot size={48} color="#f3f4f6" />
           </div>
         </div>
         <h1>Notionaire</h1>
@@ -66,10 +78,11 @@ function App() {
 
       <main className="glass-panel animate-fade-in" style={{ animationDelay: '0.1s' }}>
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-          <TabButton active={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')} icon={<Terminal size={18} />} label="Tasks" />
-          <TabButton active={activeTab === 'research'} onClick={() => setActiveTab('research')} icon={<Search size={18} />} label="Research" />
-          <TabButton active={activeTab === 'workspace'} onClick={() => setActiveTab('workspace')} icon={<Layout size={18} />} label="Workspace" />
-          <TabButton active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} icon={<MessageSquare size={18} />} label="Chat RAG" />
+          <TabButton active={activeTab === 'tasks'} onClick={() => handleTabChange('tasks')} icon={<Terminal size={18} />} label="Tasks" />
+          <TabButton active={activeTab === 'research'} onClick={() => handleTabChange('research')} icon={<Search size={18} />} label="Research" />
+          <TabButton active={activeTab === 'workspace'} onClick={() => handleTabChange('workspace')} icon={<Layout size={18} />} label="Workspace" />
+          <TabButton active={activeTab === 'chat'} onClick={() => handleTabChange('chat')} icon={<MessageSquare size={18} />} label="Chat RAG" />
+          <TabButton active={activeTab === 'monitor'} onClick={() => handleTabChange('monitor')} icon={<Activity size={18} />} label="Monitor" />
         </div>
 
         <div style={{ position: 'relative' }}>
@@ -80,12 +93,14 @@ function App() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAction()}
+            disabled={activeTab === 'monitor'}
+            style={{ opacity: activeTab === 'monitor' ? 0.5 : 1 }}
           />
           <button 
             className="btn" 
             style={{ position: 'absolute', right: '8px', top: '8px', padding: '0.4rem 1rem' }}
             onClick={handleAction}
-            disabled={loading || !input.trim()}
+            disabled={loading || (activeTab !== 'monitor' && !input.trim())}
           >
             {loading ? <Loader2 className="loading-pulse" size={18} /> : <Sparkles size={18} />}
             {loading ? 'Processing' : 'Execute'}
@@ -93,11 +108,13 @@ function App() {
         </div>
 
         {result && (
-          <div className="glass-panel animate-fade-in" style={{ marginTop: '2rem', background: 'rgba(16, 185, 129, 0.05)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
-            <h3 style={{ color: '#34d399', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Bot size={20} /> Response
+          <div className="glass-panel animate-fade-in" style={{ marginTop: '2rem', background: 'rgba(255, 255, 255, 0.03)', borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+            <h3 style={{ color: '#e5e7eb', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}>
+              <Bot size={20} color="#9ca3af" /> Response
             </h3>
-            <p style={{ whiteSpace: 'pre-wrap', color: '#e5e7eb' }}>{result}</p>
+            <div className="markdown-body">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
+            </div>
           </div>
         )}
       </main>
@@ -110,17 +127,18 @@ function TabButton({ active, onClick, icon, label }) {
     <button 
       onClick={onClick}
       style={{
-        background: active ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-        border: `1px solid ${active ? 'rgba(99, 102, 241, 0.5)' : 'rgba(255, 255, 255, 0.1)'}`,
-        color: active ? '#a5b4fc' : '#9ca3af',
+        background: active ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+        border: `1px solid ${active ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.05)'}`,
+        color: active ? '#f3f4f6' : '#9ca3af',
         padding: '0.6rem 1.2rem',
-        borderRadius: '20px',
+        borderRadius: '8px',
         display: 'flex',
         alignItems: 'center',
         gap: '0.5rem',
         cursor: 'pointer',
-        transition: 'all 0.2s',
-        fontWeight: 500
+        transition: 'all 0.2s ease',
+        fontWeight: 500,
+        fontSize: '0.9rem'
       }}
     >
       {icon} {label}
@@ -134,7 +152,8 @@ function getPlaceholder(tab) {
     case 'research': return "E.g., Compare top 3 mechanical keyboards...";
     case 'workspace': return "E.g., Build a multiplayer chess game...";
     case 'chat': return "E.g., What were the key findings from my keyboard research?";
-    default: return "Type a command...";
+    case 'monitor': return "Click Execute to scan the workspace for conflicts...";
+    default: return "";
   }
 }
 

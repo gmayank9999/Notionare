@@ -1,4 +1,5 @@
 import google.generativeai as genai
+from typing import Any
 import os
 import json
 import datetime
@@ -74,3 +75,42 @@ Return ONLY the JSON object, nothing else."""
                 print(f"Failed to synthesize research: {e}")
                 return {}
     return {}
+
+def _robust_generate(prompt: str) -> Any:
+    for attempt in range(2):
+        try:
+            response = model.generate_content(prompt)
+            text = response.text.strip()
+            if text.startswith("```json"):
+                text = text[7:]
+            if text.startswith("```"):
+                text = text[3:]
+            if text.endswith("```"):
+                text = text[:-3]
+            return json.loads(text.strip())
+        except Exception as e:
+            if attempt == 1:
+                print(f"Failed LLM generation: {e}")
+                return None
+    return None
+
+def generate_prd(idea: str) -> dict:
+    prompt = f"Given this project idea: '{idea}', generate a PRD JSON object with exactly these keys: 'problem_statement' (string), 'target_users' (array of strings), 'core_features' (array of strings)."
+    res = _robust_generate(prompt)
+    return res if res else {}
+
+def generate_task_breakdown(prd: dict) -> list[dict]:
+    today_date = datetime.date.today().strftime("%Y-%m-%d")
+    prompt = f"Given this PRD: {json.dumps(prd)}, generate a list of 8-12 concrete build tasks spaced out starting from today ({today_date}) across 2-4 weeks. Return ONLY a JSON array of objects with exactly these keys: 'task_name' (string), 'due_date' (YYYY-MM-DD), 'priority' (High/Medium/Low)."
+    res = _robust_generate(prompt)
+    return res if res else []
+
+def generate_milestones(tasks: list[dict]) -> list[dict]:
+    prompt = f"Group these tasks into 3-4 dated milestones: {json.dumps(tasks)}. Return ONLY a JSON array of objects with exactly these keys: 'milestone_title' (string), 'target_date' (YYYY-MM-DD), 'task_names' (array of strings matching the input tasks)."
+    res = _robust_generate(prompt)
+    return res if res else []
+
+def generate_risks(prd: dict) -> list[str]:
+    prompt = f"Given this PRD: {json.dumps(prd)}, list 3-5 plausible risks as a JSON array of short strings."
+    res = _robust_generate(prompt)
+    return res if res else []

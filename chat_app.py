@@ -19,3 +19,13 @@ if st.button("Run Research Agent") and research_goal:
     with st.spinner("Agent is searching the web and compiling a Notion page..."):
         summary = process_research_goal(research_goal)
     st.success(summary)
+
+st.markdown("---")
+st.write("Or, describe a project idea and the agent will plan the whole thing:")
+
+idea = st.text_input("Project idea (e.g. 'Build a food delivery app'):")
+if st.button("Generate Workspace") and idea:
+    with st.spinner("Agent is planning the project and generating a full workspace..."):
+        from feature4_workspace_generator import process_workspace_idea
+        summary = process_workspace_idea(idea)
+    st.success(summary)

@@ -140,3 +140,74 @@ def create_research_page(title: str, synthesized: dict) -> str:
     
     return page_url
 
+def create_workspace_pages(prd: dict, milestones: list[dict], risks: list[str]) -> dict:
+    urls = {}
+    
+    # 1. PRD
+    prd_page = notion.pages.create(
+        parent={"data_source_id": AGENT_LOG_DB_ID},
+        properties={
+            "Name": {"title": [{"text": {"content": "Product Requirements Document"}}]},
+            "Type": {"select": {"name": "Action"}}
+        }
+    )
+    urls["prd_url"] = prd_page["url"]
+    
+    prd_children = [
+        {"object": "block", "type": "heading_1", "heading_1": {"rich_text": [{"type": "text", "text": {"content": "PRD"}}]}},
+        {"object": "block", "type": "heading_2", "heading_2": {"rich_text": [{"type": "text", "text": {"content": "Problem Statement"}}]}},
+        {"object": "block", "type": "paragraph", "paragraph": {"rich_text": [{"type": "text", "text": {"content": prd.get("problem_statement", "")}}]}},
+        {"object": "block", "type": "heading_2", "heading_2": {"rich_text": [{"type": "text", "text": {"content": "Target Users"}}]}}
+    ]
+    for user in prd.get("target_users", []):
+        prd_children.append({"object": "block", "type": "bulleted_list_item", "bulleted_list_item": {"rich_text": [{"type": "text", "text": {"content": user}}]}})
+        
+    prd_children.append({"object": "block", "type": "heading_2", "heading_2": {"rich_text": [{"type": "text", "text": {"content": "Core Features"}}]}})
+    for feature in prd.get("core_features", []):
+        prd_children.append({"object": "block", "type": "bulleted_list_item", "bulleted_list_item": {"rich_text": [{"type": "text", "text": {"content": feature}}]}})
+        
+    notion.blocks.children.append(block_id=prd_page["id"], children=prd_children)
+    
+    # 2. Milestones
+    ms_page = notion.pages.create(
+        parent={"data_source_id": AGENT_LOG_DB_ID},
+        properties={
+            "Name": {"title": [{"text": {"content": "Project Milestones"}}]},
+            "Type": {"select": {"name": "Action"}}
+        }
+    )
+    urls["milestones_url"] = ms_page["url"]
+    ms_children = [{"object": "block", "type": "heading_1", "heading_1": {"rich_text": [{"type": "text", "text": {"content": "Milestones"}}]}}]
+    for ms in milestones:
+        ms_children.append({"object": "block", "type": "heading_2", "heading_2": {"rich_text": [{"type": "text", "text": {"content": f"{ms.get('milestone_title', '')} (Target: {ms.get('target_date', '')})"}}]}})
+        for task in ms.get("task_names", []):
+            ms_children.append({"object": "block", "type": "bulleted_list_item", "bulleted_list_item": {"rich_text": [{"type": "text", "text": {"content": task}}]}})
+            
+    notion.blocks.children.append(block_id=ms_page["id"], children=ms_children)
+    
+    # 3. Risks
+    risk_page = notion.pages.create(
+        parent={"data_source_id": AGENT_LOG_DB_ID},
+        properties={
+            "Name": {"title": [{"text": {"content": "Project Risks"}}]},
+            "Type": {"select": {"name": "Action"}}
+        }
+    )
+    urls["risks_url"] = risk_page["url"]
+    risk_children = [{"object": "block", "type": "heading_1", "heading_1": {"rich_text": [{"type": "text", "text": {"content": "Risks"}}]}}]
+    for risk in risks:
+        risk_children.append({"object": "block", "type": "bulleted_list_item", "bulleted_list_item": {"rich_text": [{"type": "text", "text": {"content": risk}}]}})
+        
+    notion.blocks.children.append(block_id=risk_page["id"], children=risk_children)
+    
+    # Link back to PRD
+    notion.blocks.children.append(
+        block_id=prd_page["id"],
+        children=[
+            {"object": "block", "type": "heading_2", "heading_2": {"rich_text": [{"type": "text", "text": {"content": "Project Links"}}]}},
+            {"object": "block", "type": "paragraph", "paragraph": {"rich_text": [{"type": "text", "text": {"content": "Milestones: ", "link": {"url": urls["milestones_url"]}}}]}},
+            {"object": "block", "type": "paragraph", "paragraph": {"rich_text": [{"type": "text", "text": {"content": "Risks: ", "link": {"url": urls["risks_url"]}}}]}}
+        ]
+    )
+    
+    return urls

@@ -34,7 +34,7 @@ def detect_conflicts(tasks: list) -> list[str]:
     for date, conflict_tasks in date_to_high_priority_tasks.items():
         if len(conflict_tasks) >= 2:
             task_names = "', '".join(conflict_tasks)
-            alerts.append(f"⚠ Conflict detected: '{task_names}' are all due on {date} and marked High Priority.")
+            alerts.append(f"Conflict detected: '{task_names}' are all due on {date} and marked High Priority.")
             
     return alerts
 

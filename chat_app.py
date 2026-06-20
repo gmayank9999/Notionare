@@ -29,3 +29,30 @@ if st.button("Generate Workspace") and idea:
         from feature4_workspace_generator import process_workspace_idea
         summary = process_workspace_idea(idea)
     st.success(summary)
+st.markdown("---")
+st.write("### Chat with your Workspace (RAG)")
+st.write("Ask questions about your research and PRDs.")
+
+rag_query = st.text_input("Ask a question:")
+if st.button("Ask Notionaire") and rag_query:
+    with st.spinner("Reading Notion databases and generating answer..."):
+        from feature5_rag_chat import process_rag_chat
+        answer = process_rag_chat(rag_query)
+    st.info(answer)
+
+st.markdown("---")
+st.write("### Project Monitor")
+st.write("Scan your tasks for any high-priority scheduling conflicts.")
+
+if st.button("Run Conflict Monitor"):
+    with st.spinner("Scanning tasks for conflicts..."):
+        from feature3_monitor import get_open_tasks, detect_conflicts, post_alert
+        tasks = get_open_tasks()
+        alerts = detect_conflicts(tasks)
+        if alerts:
+            for alert in alerts:
+                post_alert(alert)
+                st.warning(alert)
+            st.error(f"Found {len(alerts)} conflicts and logged them to Notion.")
+        else:
+            st.success("No scheduling conflicts detected! Your workspace is healthy.")

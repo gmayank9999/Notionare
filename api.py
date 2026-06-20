@@ -61,6 +61,22 @@ def chat_with_workspace(req: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/monitor")
+def monitor_tasks():
+    try:
+        import feature3_monitor
+        tasks = feature3_monitor.get_open_tasks()
+        alerts = feature3_monitor.detect_conflicts(tasks)
+        
+        if alerts:
+            for alert in alerts:
+                feature3_monitor.post_alert(alert)
+            return {"success": True, "message": f"Found {len(alerts)} conflicts and logged them to Notion:\n\n" + "\n\n".join(alerts)}
+        else:
+            return {"success": True, "message": "No scheduling conflicts detected. Workspace is healthy."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

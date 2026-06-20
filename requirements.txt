@@ -1,5 +1,5 @@
 notion-client
-google-generativeai
-duckduckgo-search
+google-genai
+ddgs
 streamlit
 python-dotenv

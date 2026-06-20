@@ -20,6 +20,6 @@ def create_task(task_name, due_date, priority) -> None:
         properties["Due Date"] = {"date": {"start": due_date}}
         
     notion.pages.create(
-        parent={"database_id": TASKS_DB_ID},
+        parent={"data_source_id": TASKS_DB_ID},
         properties=properties
     )

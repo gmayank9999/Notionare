@@ -3,3 +3,5 @@ google-genai
 ddgs
 streamlit
 python-dotenv
+fastapi
+uvicorn

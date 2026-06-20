@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", ""))
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-2.5-flash-lite"
 
 def _clean_json_text(text: str) -> str:
     """Strip markdown code fences the LLM sometimes wraps around JSON."""

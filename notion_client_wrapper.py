@@ -1,3 +1,5 @@
+
+# pyrefly: ignore [missing-import]
 from notion_client import Client
 from dotenv import load_dotenv
 import os

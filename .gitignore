@@ -1,4 +1,6 @@
 .env
 .venv/
 Plan.md
-__pycache__/
+__pycache__/
+test_ds.py
+check_env.py

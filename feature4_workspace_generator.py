@@ -25,7 +25,7 @@ def process_workspace_idea(idea: str) -> str:
         print(f"Creating {len(tasks)} tasks in the database...")
         for t in tasks:
             try:
-                create_task(t.get("task_name"), t.get("due_date"), t.get("priority", "Medium"))
+                create_task(t.get("task_name"), t.get("due_date"), t.get("priority", "Medium"), t.get("subject_tag", ""))
             except Exception as e:
                 print(f"Failed to create task '{t.get('task_name')}': {e}")
                 

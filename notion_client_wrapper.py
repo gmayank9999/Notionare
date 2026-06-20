@@ -1,6 +1,7 @@
 from notion_client import Client
 from dotenv import load_dotenv
 import os
+import datetime
 
 load_dotenv()
 
@@ -8,7 +9,7 @@ notion = Client(auth=os.environ.get("NOTION_API_KEY", ""))
 TASKS_DB_ID = os.environ.get("TASKS_DB_ID", "")
 AGENT_LOG_DB_ID = os.environ.get("AGENT_LOG_DB_ID", "")
 
-def create_task(task_name, due_date, priority) -> None:
+def create_task(task_name, due_date, priority, subject_tag="") -> None:
     properties = {
         "Name": {"title": [{"text": {"content": task_name}}]},
         "Priority": {"select": {"name": priority}},
@@ -18,11 +19,17 @@ def create_task(task_name, due_date, priority) -> None:
     
     if due_date and due_date.lower() != "none" and due_date.lower() != "null":
         properties["Due Date"] = {"date": {"start": due_date}}
+
+    if subject_tag:
+        properties["Subject/Tag"] = {"rich_text": [{"text": {"content": subject_tag}}]}
         
     notion.pages.create(
         parent={"data_source_id": TASKS_DB_ID},
         properties=properties
     )
+
+def _now_iso() -> str:
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 def post_alert(message: str) -> None:
     notion.pages.create(
@@ -30,6 +37,7 @@ def post_alert(message: str) -> None:
         properties={
             "Name": {"title": [{"text": {"content": "Schedule Conflict Warning"}}]},
             "Type": {"select": {"name": "Alert"}},
+            "Timestamp": {"date": {"start": _now_iso()}},
             "Summary": {"rich_text": [{"text": {"content": message}}]}
         }
     )
@@ -39,12 +47,19 @@ def create_research_page(title: str, synthesized: dict) -> str:
         parent={"data_source_id": AGENT_LOG_DB_ID},
         properties={
             "Name": {"title": [{"text": {"content": title}}]},
-            "Type": {"select": {"name": "Research"}}
+            "Type": {"select": {"name": "Research"}},
+            "Timestamp": {"date": {"start": _now_iso()}},
+            "Summary": {"rich_text": [{"text": {"content": synthesized.get("intro", "")[:2000]}}]}
         }
     )
     page_id = new_page["id"]
     page_url = new_page["url"]
-    
+
+    # Set Linked Page now that we have the URL
+    notion.pages.update(
+        page_id=page_id,
+        properties={"Linked Page": {"url": page_url}}
+    )
     children = []
     children.append({
         "object": "block",
@@ -148,10 +163,13 @@ def create_workspace_pages(prd: dict, milestones: list[dict], risks: list[str]) 
         parent={"data_source_id": AGENT_LOG_DB_ID},
         properties={
             "Name": {"title": [{"text": {"content": "Product Requirements Document"}}]},
-            "Type": {"select": {"name": "Action"}}
+            "Type": {"select": {"name": "Action"}},
+            "Timestamp": {"date": {"start": _now_iso()}},
+            "Summary": {"rich_text": [{"text": {"content": prd.get("problem_statement", "")[:2000]}}]}
         }
     )
     urls["prd_url"] = prd_page["url"]
+    notion.pages.update(page_id=prd_page["id"], properties={"Linked Page": {"url": prd_page["url"]}})
     
     prd_children = [
         {"object": "block", "type": "heading_1", "heading_1": {"rich_text": [{"type": "text", "text": {"content": "PRD"}}]}},
@@ -173,10 +191,13 @@ def create_workspace_pages(prd: dict, milestones: list[dict], risks: list[str]) 
         parent={"data_source_id": AGENT_LOG_DB_ID},
         properties={
             "Name": {"title": [{"text": {"content": "Project Milestones"}}]},
-            "Type": {"select": {"name": "Action"}}
+            "Type": {"select": {"name": "Action"}},
+            "Timestamp": {"date": {"start": _now_iso()}},
+            "Summary": {"rich_text": [{"text": {"content": f"{len(milestones)} milestones planned"}}]}
         }
     )
     urls["milestones_url"] = ms_page["url"]
+    notion.pages.update(page_id=ms_page["id"], properties={"Linked Page": {"url": ms_page["url"]}})
     ms_children = [{"object": "block", "type": "heading_1", "heading_1": {"rich_text": [{"type": "text", "text": {"content": "Milestones"}}]}}]
     for ms in milestones:
         ms_children.append({"object": "block", "type": "heading_2", "heading_2": {"rich_text": [{"type": "text", "text": {"content": f"{ms.get('milestone_title', '')} (Target: {ms.get('target_date', '')})"}}]}})
@@ -190,10 +211,13 @@ def create_workspace_pages(prd: dict, milestones: list[dict], risks: list[str]) 
         parent={"data_source_id": AGENT_LOG_DB_ID},
         properties={
             "Name": {"title": [{"text": {"content": "Project Risks"}}]},
-            "Type": {"select": {"name": "Action"}}
+            "Type": {"select": {"name": "Action"}},
+            "Timestamp": {"date": {"start": _now_iso()}},
+            "Summary": {"rich_text": [{"text": {"content": f"{len(risks)} risks identified"}}]}
         }
     )
     urls["risks_url"] = risk_page["url"]
+    notion.pages.update(page_id=risk_page["id"], properties={"Linked Page": {"url": risk_page["url"]}})
     risk_children = [{"object": "block", "type": "heading_1", "heading_1": {"rich_text": [{"type": "text", "text": {"content": "Risks"}}]}}]
     for risk in risks:
         risk_children.append({"object": "block", "type": "bulleted_list_item", "bulleted_list_item": {"rich_text": [{"type": "text", "text": {"content": risk}}]}})

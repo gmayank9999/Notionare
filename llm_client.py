@@ -68,7 +68,8 @@ def extract_tasks(user_text: str) -> list[dict]:
         f"Given the following text, extract every distinct task mentioned. "
         f"Return ONLY a JSON array, no other text, where each object has exactly these keys: "
         f"task_name (string), due_date (string, format YYYY-MM-DD, inferred relative to today's date above), "
-        f"priority (one of: High, Medium, Low, default Medium if not stated). "
+        f"priority (one of: High, Medium, Low, default Medium if not stated), "
+        f"subject_tag (string, a short category like 'DSA', 'DBMS', 'GenAI', 'Work', etc. inferred from context). "
         f"Text: {user_text}"
     )
     result = _robust_generate(prompt)
@@ -111,7 +112,8 @@ def generate_task_breakdown(prd: dict) -> list[dict]:
         f"Given this PRD: {json.dumps(prd)}, generate a list of 8-12 concrete build tasks "
         f"spaced out starting from today ({today_date}) across 2-4 weeks. "
         f"Return ONLY a JSON array of objects with exactly these keys: "
-        f"'task_name' (string), 'due_date' (YYYY-MM-DD), 'priority' (High/Medium/Low). "
+        f"'task_name' (string), 'due_date' (YYYY-MM-DD), 'priority' (High/Medium/Low), "
+        f"'subject_tag' (string, a short category for this task like 'Backend', 'Frontend', 'Database', 'Testing', etc.). "
         f"Nothing else."
     )
     result = _robust_generate(prompt)

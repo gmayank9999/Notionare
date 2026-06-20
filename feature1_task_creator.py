@@ -11,9 +11,10 @@ def process_user_input(user_text: str) -> str:
         task_name = t.get("task_name")
         due_date = t.get("due_date")
         priority = t.get("priority", "Medium")
+        subject_tag = t.get("subject_tag", "")
         if task_name:
             try:
-                create_task(task_name, due_date, priority)
+                create_task(task_name, due_date, priority, subject_tag)
                 created_count += 1
             except Exception as e:
                 print(f"Failed to create task '{task_name}': {e}")

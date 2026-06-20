@@ -21,7 +21,7 @@ def _clean_json_text(text: str) -> str:
         text = text[:-3]
     return text.strip()
 
-def _call_gemini(prompt: str, retries: int = 2) -> str | None:
+def _call_gemini(prompt: str, retries: int = 4) -> str | None:
     """Call Gemini with retry logic and rate-limit backoff."""
     for attempt in range(retries):
         try:
@@ -32,9 +32,9 @@ def _call_gemini(prompt: str, retries: int = 2) -> str | None:
             return response.text
         except Exception as e:
             err_str = str(e)
-            if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
-                wait = 5 * (attempt + 1)
-                print(f"Rate limited, waiting {wait}s before retry...")
+            if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "Too Many Requests" in err_str:
+                wait = 10 * (attempt + 1)
+                print(f"Rate limited, waiting {wait}s before retry (attempt {attempt + 1}/{retries})...")
                 time.sleep(wait)
             else:
                 if attempt == retries - 1:

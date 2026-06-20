@@ -1,0 +1,20 @@
+name: Notionaire Monitor
+on:
+  schedule:
+    - cron: '0 * * * *'   # runs once every hour
+  workflow_dispatch:        # also allows manual trigger from GitHub UI, useful for live demo
+jobs:
+  run-monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: python feature3_monitor.py
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          TASKS_DB_ID: ${{ secrets.TASKS_DB_ID }}
+          AGENT_LOG_DB_ID: ${{ secrets.AGENT_LOG_DB_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

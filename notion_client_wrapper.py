@@ -23,3 +23,14 @@ def create_task(task_name, due_date, priority) -> None:
         parent={"data_source_id": TASKS_DB_ID},
         properties=properties
     )
+
+def post_alert(message: str) -> None:
+    notion.pages.create(
+        parent={"data_source_id": AGENT_LOG_DB_ID},
+        properties={
+            "Name": {"title": [{"text": {"content": "Schedule Conflict Warning"}}]},
+            "Type": {"select": {"name": "Alert"}},
+            "Summary": {"rich_text": [{"text": {"content": message}}]}
+        }
+    )
+
